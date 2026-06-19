@@ -43,7 +43,9 @@ def firefox_time_to_dt(firefox_time: int) -> datetime:
     return datetime(1970, 1, 1) + timedelta(microseconds=firefox_time)
 
 
-def format_visit_datetime(raw_timestamp: int, browser_name: str | None) -> tuple[str, str, str]:
+def format_visit_datetime(
+    raw_timestamp: int, browser_name: str | None
+) -> tuple[str, str, str]:
     """Formata timestamp bruto de visita em representações textuais padronizadas."""
     if browser_name and browser_name.startswith("firefox"):
         visit_dt = firefox_time_to_dt(raw_timestamp)
@@ -56,15 +58,23 @@ def format_visit_datetime(raw_timestamp: int, browser_name: str | None) -> tuple
     return last_visit_date, last_visit_hour, last_visit_timestamp
 
 
-def discover_browser_histories(user_profile: str | None = None) -> list[tuple[str, str]]:
+def discover_browser_histories(
+    user_profile: str | None = None,
+) -> list[tuple[str, str]]:
     """Discover local browser-history databases for the supported browsers."""
     user_profile = user_profile or os.environ.get("USERPROFILE")
     if not user_profile:
         raise RuntimeError("Variável de ambiente USERPROFILE não encontrada.")
 
-    chrome_history = os.path.join(user_profile, r"AppData\Local\Google\Chrome\User Data\Default\History")
-    edge_history = os.path.join(user_profile, r"AppData\Local\Microsoft\Edge\User Data\Default\History")
-    firefox_profiles_dir = os.path.join(user_profile, r"AppData\Roaming\Mozilla\Firefox\Profiles")
+    chrome_history = os.path.join(
+        user_profile, r"AppData\Local\Google\Chrome\User Data\Default\History"
+    )
+    edge_history = os.path.join(
+        user_profile, r"AppData\Local\Microsoft\Edge\User Data\Default\History"
+    )
+    firefox_profiles_dir = os.path.join(
+        user_profile, r"AppData\Roaming\Mozilla\Firefox\Profiles"
+    )
 
     firefox_histories: list[tuple[str, str]] = []
     if os.path.exists(firefox_profiles_dir):
@@ -81,7 +91,9 @@ def discover_browser_histories(user_profile: str | None = None) -> list[tuple[st
     ] + firefox_histories
 
 
-def extract_history_to_rows(history_path: str | Path, browser_name: str | None = None) -> list[HistoryRow]:
+def extract_history_to_rows(
+    history_path: str | Path, browser_name: str | None = None
+) -> list[HistoryRow]:
     """Extrai histórico de um banco SQLite de navegador para uma lista normalizada."""
     history_path = str(history_path)
     if not os.path.exists(history_path):
@@ -128,22 +140,26 @@ def extract_history_to_rows(history_path: str | Path, browser_name: str | None =
                 visit_count = int(row[2]) if row[2] is not None else 0
                 last_visit_time = int(row[3])
                 domain = urlparse(url).netloc
-                date_last_visit, hour_last_visit, timestamp_last_visit = format_visit_datetime(
-                    last_visit_time,
-                    browser_name,
+                date_last_visit, hour_last_visit, timestamp_last_visit = (
+                    format_visit_datetime(
+                        last_visit_time,
+                        browser_name,
+                    )
                 )
 
-                normalized_rows.append((
-                    url,
-                    title,
-                    visit_count,
-                    last_visit_time,
-                    domain,
-                    date_last_visit,
-                    hour_last_visit,
-                    timestamp_last_visit,
-                    browser_name,
-                ))
+                normalized_rows.append(
+                    (
+                        url,
+                        title,
+                        visit_count,
+                        last_visit_time,
+                        domain,
+                        date_last_visit,
+                        hour_last_visit,
+                        timestamp_last_visit,
+                        browser_name,
+                    )
+                )
             return normalized_rows
     except Exception as error:
         print(f"Erro ao ler o banco: {error}")
@@ -153,4 +169,3 @@ def extract_history_to_rows(history_path: str | Path, browser_name: str | None =
             os.remove(temp_copy)
         except Exception:
             pass
-

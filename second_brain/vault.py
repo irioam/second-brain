@@ -6,7 +6,12 @@ from pathlib import Path
 from .config import DEFAULT_DB_PATH, VAULT_DIRECTORIES, resolve_default_vault_path
 from .database import load_source_notes
 from .models import SourceNote
-from .templates import render_category_note, render_daily_note, render_moc, render_source_note
+from .templates import (
+    render_category_note,
+    render_daily_note,
+    render_moc,
+    render_source_note,
+)
 
 
 def safe_write(path: Path, content: str, dry_run: bool) -> str:
@@ -43,7 +48,9 @@ def build_vault(
 
     counters = defaultdict(int)
     for note in notes:
-        status = safe_write(vault_path / note.path, render_source_note(note), dry_run=dry_run)
+        status = safe_write(
+            vault_path / note.path, render_source_note(note), dry_run=dry_run
+        )
         counters[f"source_{status}"] += 1
 
     notes_by_day: dict[str, list[SourceNote]] = defaultdict(list)
@@ -52,7 +59,9 @@ def build_vault(
 
     for visited, daily_notes in notes_by_day.items():
         daily_path = vault_path / "03 - Daily" / f"{visited}.md"
-        status = safe_write(daily_path, render_daily_note(visited, daily_notes), dry_run=dry_run)
+        status = safe_write(
+            daily_path, render_daily_note(visited, daily_notes), dry_run=dry_run
+        )
         counters[f"daily_{status}"] += 1
 
     notes_by_type: dict[str, list[SourceNote]] = defaultdict(list)
@@ -61,10 +70,16 @@ def build_vault(
 
     for source_type, typed_notes in notes_by_type.items():
         category_path = vault_path / "01 - Sources" / f"{source_type}.md"
-        status = safe_write(category_path, render_category_note(source_type, typed_notes), dry_run=dry_run)
+        status = safe_write(
+            category_path,
+            render_category_note(source_type, typed_notes),
+            dry_run=dry_run,
+        )
         counters[f"category_{status}"] += 1
 
-    moc_status = safe_write(vault_path / "00 - Index" / "MOC.md", render_moc(notes), dry_run=dry_run)
+    moc_status = safe_write(
+        vault_path / "00 - Index" / "MOC.md", render_moc(notes), dry_run=dry_run
+    )
     counters[f"moc_{moc_status}"] += 1
 
     mode = "DRY-RUN" if dry_run else "WRITE"
