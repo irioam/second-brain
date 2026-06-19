@@ -35,7 +35,10 @@ def _history_table_exists(connection: duckdb.DuckDBPyConnection) -> bool:
 def _history_columns(connection: duckdb.DuckDBPyConnection) -> set[str]:
     if not _history_table_exists(connection):
         return set()
-    return {row[1] for row in connection.execute("PRAGMA table_info('historico')").fetchall()}
+    return {
+        row[1]
+        for row in connection.execute("PRAGMA table_info('historico')").fetchall()
+    }
 
 
 def _create_history_table(connection: duckdb.DuckDBPyConnection) -> None:
@@ -58,22 +61,36 @@ def _create_history_table(connection: duckdb.DuckDBPyConnection) -> None:
     """)
 
 
-def _add_missing_history_metadata(connection: duckdb.DuckDBPyConnection, columns: set[str]) -> None:
+def _add_missing_history_metadata(
+    connection: duckdb.DuckDBPyConnection, columns: set[str]
+) -> None:
     if "first_seen_at" not in columns:
-        connection.execute("ALTER TABLE historico ADD COLUMN first_seen_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+        connection.execute(
+            "ALTER TABLE historico ADD COLUMN first_seen_at "
+            "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+        )
     if "last_seen_at" not in columns:
-        connection.execute("ALTER TABLE historico ADD COLUMN last_seen_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+        connection.execute(
+            "ALTER TABLE historico ADD COLUMN last_seen_at "
+            "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+        )
     if "updated_at" not in columns:
-        connection.execute("ALTER TABLE historico ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+        connection.execute(
+            "ALTER TABLE historico ADD COLUMN updated_at "
+            "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+        )
 
 
 def _migrate_legacy_history_table(connection: duckdb.DuckDBPyConnection) -> None:
     legacy_table = f"historico_legacy_{datetime.now().strftime('%Y%m%d%H%M%S%f')}"
     legacy_rows = connection.execute(
         """
-        SELECT url, title, visit_count, last_visit_time, domain, date_last_visit, hour_last_visit, timestamp_last_visit, navegador
+        SELECT url, title, visit_count, last_visit_time, domain,
+               date_last_visit, hour_last_visit, timestamp_last_visit,
+               navegador
         FROM historico
-        ORDER BY COALESCE(visit_count, 0) DESC, COALESCE(last_visit_time, 0) DESC
+        ORDER BY COALESCE(visit_count, 0) DESC,
+                 COALESCE(last_visit_time, 0) DESC
         """,
     ).fetchall()
     deduplicated_rows: dict[str, HistoryRow] = {}
@@ -89,7 +106,10 @@ def _migrate_legacy_history_table(connection: duckdb.DuckDBPyConnection) -> None
         current_last_visit_time = int(current[3] or 0)
         row_visit_count = int(visit_count or 0)
         row_last_visit_time = int(last_visit_time or 0)
-        if (row_visit_count, row_last_visit_time) > (current_visit_count, current_last_visit_time):
+        if (row_visit_count, row_last_visit_time) > (
+            current_visit_count,
+            current_last_visit_time,
+        ):
             deduplicated_rows[history_key] = row
 
     connection.execute(f"ALTER TABLE historico RENAME TO {legacy_table}")
@@ -113,13 +133,25 @@ def ensure_history_table(connection: duckdb.DuckDBPyConnection) -> None:
     connection.commit()
 
 
-def upsert_history_rows(connection: duckdb.DuckDBPyConnection, rows: list[HistoryRow]) -> None:
+def upsert_history_rows(
+    connection: duckdb.DuckDBPyConnection, rows: list[HistoryRow]
+) -> None:
     """Insert new history rows and update changed rows without deleting missing rows."""
     if not rows:
         return
 
     for row in rows:
-        url, title, visit_count, last_visit_time, domain, date_last_visit, hour_last_visit, timestamp_last_visit, browser_name = row
+        (
+            url,
+            title,
+            visit_count,
+            last_visit_time,
+            domain,
+            date_last_visit,
+            hour_last_visit,
+            timestamp_last_visit,
+            browser_name,
+        ) = row
         history_key = make_history_key(browser_name, url)
         existing = connection.execute(
             """
@@ -138,7 +170,10 @@ def upsert_history_rows(connection: duckdb.DuckDBPyConnection, rows: list[Histor
                     date_last_visit, hour_last_visit, timestamp_last_visit, navegador,
                     first_seen_at, last_seen_at, updated_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                VALUES (
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                    CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+                )
                 """,
                 [
                     history_key,
@@ -157,7 +192,10 @@ def upsert_history_rows(connection: duckdb.DuckDBPyConnection, rows: list[Histor
 
         existing_visit_count = int(existing[0] or 0)
         existing_last_visit_time = int(existing[1] or 0)
-        should_update = last_visit_time > existing_last_visit_time or visit_count > existing_visit_count
+        should_update = (
+            last_visit_time > existing_last_visit_time
+            or visit_count > existing_visit_count
+        )
         if should_update:
             connection.execute(
                 """
@@ -191,17 +229,22 @@ def upsert_history_rows(connection: duckdb.DuckDBPyConnection, rows: list[Histor
             )
         else:
             connection.execute(
-                "UPDATE historico SET last_seen_at = CURRENT_TIMESTAMP WHERE history_key = ?",
+                "UPDATE historico SET last_seen_at = CURRENT_TIMESTAMP "
+                "WHERE history_key = ?",
                 [history_key],
             )
 
 
-def insert_history_rows(connection: duckdb.DuckDBPyConnection, rows: list[HistoryRow]) -> None:
+def insert_history_rows(
+    connection: duckdb.DuckDBPyConnection, rows: list[HistoryRow]
+) -> None:
     """Compatibility wrapper for the incremental upsert implementation."""
     upsert_history_rows(connection, rows)
 
 
-def sync_history_database(browser_histories: list[tuple[str, str]], db_path: Path = DEFAULT_DB_PATH) -> int:
+def sync_history_database(
+    browser_histories: list[tuple[str, str]], db_path: Path = DEFAULT_DB_PATH
+) -> int:
     """Extract all browser histories and incrementally sync the DuckDB history table."""
     from .extraction import extract_history_to_rows
 
@@ -219,7 +262,10 @@ def sync_history_database(browser_histories: list[tuple[str, str]], db_path: Pat
 
     connection.commit()
     connection.close()
-    print(f"Histórico sincronizado em {db_path} com {total_rows} registros lidos nesta execução.")
+    print(
+        f"Histórico sincronizado em {db_path} com {total_rows} "
+        "registros lidos nesta execução."
+    )
     return total_rows
 
 
@@ -228,7 +274,9 @@ def create_history_table(connection: duckdb.DuckDBPyConnection) -> None:
     ensure_history_table(connection)
 
 
-def rebuild_history_database(browser_histories: list[tuple[str, str]], db_path: Path = DEFAULT_DB_PATH) -> int:
+def rebuild_history_database(
+    browser_histories: list[tuple[str, str]], db_path: Path = DEFAULT_DB_PATH
+) -> int:
     """Compatibility wrapper for the incremental sync implementation."""
     return sync_history_database(browser_histories, db_path=db_path)
 
@@ -238,14 +286,16 @@ def normalize_url(url: str) -> str:
     parsed_url = urlparse(url.strip())
     normalized_netloc = parsed_url.netloc.lower()
     normalized_path = parsed_url.path.rstrip("/") or parsed_url.path
-    return urlunparse((
-        parsed_url.scheme.lower(),
-        normalized_netloc,
-        normalized_path,
-        "",
-        parsed_url.query,
-        "",
-    ))
+    return urlunparse(
+        (
+            parsed_url.scheme.lower(),
+            normalized_netloc,
+            normalized_path,
+            "",
+            parsed_url.query,
+            "",
+        )
+    )
 
 
 def source_filename(title: str, visited: str, url: str) -> str:
@@ -255,7 +305,9 @@ def source_filename(title: str, visited: str, url: str) -> str:
     return f"{visited} - {title_slug} - {url_hash}.md"
 
 
-def load_source_notes(db_path: Path, limit: int | None, min_visit_count: int | None) -> list[SourceNote]:
+def load_source_notes(
+    db_path: Path, limit: int | None, min_visit_count: int | None
+) -> list[SourceNote]:
     """Load and deduplicate history rows from DuckDB as source-note records."""
     if not db_path.exists():
         raise FileNotFoundError(f"Banco DuckDB nao encontrado: {db_path}")
@@ -288,7 +340,11 @@ def load_source_notes(db_path: Path, limit: int | None, min_visit_count: int | N
 
         note_title = title or url
         source_type = classify_source(url, domain or "")
-        relative_path = Path("01 - Sources") / source_type / source_filename(note_title, visited, normalized_url)
+        relative_path = (
+            Path("01 - Sources")
+            / source_type
+            / source_filename(note_title, visited, normalized_url)
+        )
         deduplicated[normalized_url] = SourceNote(
             url=url,
             title=note_title,
@@ -342,9 +398,13 @@ def create_semantic_tables(connection: duckdb.DuckDBPyConnection) -> None:
     connection.commit()
 
 
-def load_semantic_sources(db_path: Path, min_visit_count: int | None, limit: int | None = None) -> list[SemanticSourceRecord]:
+def load_semantic_sources(
+    db_path: Path, min_visit_count: int | None, limit: int | None = None
+) -> list[SemanticSourceRecord]:
     """Load deduplicated records used as input to semantic clustering."""
-    notes = load_source_notes(db_path=db_path, limit=limit, min_visit_count=min_visit_count)
+    notes = load_source_notes(
+        db_path=db_path, limit=limit, min_visit_count=min_visit_count
+    )
     records: list[SemanticSourceRecord] = []
     for note in notes:
         url_norm = normalize_url(note.url)
@@ -362,7 +422,9 @@ def load_semantic_sources(db_path: Path, min_visit_count: int | None, limit: int
     return records
 
 
-def load_existing_embeddings(connection: duckdb.DuckDBPyConnection, model_name: str) -> dict[str, list[float]]:
+def load_existing_embeddings(
+    connection: duckdb.DuckDBPyConnection, model_name: str
+) -> dict[str, list[float]]:
     """Load already computed embeddings by normalized URL."""
     rows = connection.execute(
         """
@@ -394,7 +456,8 @@ def upsert_embeddings(
         return
     connection.executemany(
         """
-        INSERT OR REPLACE INTO source_embeddings (url_norm, title, domain, model_name, embedding_json, updated_at)
+        INSERT OR REPLACE INTO source_embeddings
+            (url_norm, title, domain, model_name, embedding_json, updated_at)
         VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
         """,
         payload,
@@ -411,11 +474,15 @@ def replace_cluster_run(
     """Replace one clustering run with cluster assignments and metadata."""
     connection.execute("DELETE FROM source_clusters WHERE run_id = ?", [run_id])
     connection.execute("DELETE FROM cluster_metadata WHERE run_id = ?", [run_id])
-    assignment_rows = [(run_id, url_norm, cluster_id, distance) for url_norm, cluster_id, distance in assignments]
+    assignment_rows = [
+        (run_id, url_norm, cluster_id, distance)
+        for url_norm, cluster_id, distance in assignments
+    ]
     if assignment_rows:
         connection.executemany(
             """
-            INSERT INTO source_clusters (run_id, url_norm, cluster_id, distance_to_centroid, created_at)
+            INSERT INTO source_clusters
+                (run_id, url_norm, cluster_id, distance_to_centroid, created_at)
             VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
             """,
             assignment_rows,
@@ -434,7 +501,8 @@ def replace_cluster_run(
     if metadata_rows:
         connection.executemany(
             """
-            INSERT INTO cluster_metadata (run_id, cluster_id, label, summary, top_terms, size, updated_at)
+            INSERT INTO cluster_metadata
+                (run_id, cluster_id, label, summary, top_terms, size, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             """,
             metadata_rows,
@@ -452,9 +520,17 @@ def load_cluster_items(db_path: Path, run_id: str) -> dict[int, list[ClusterItem
             se.domain,
             COALESCE(h.visit_count, 0) AS visit_count,
             CASE
-                WHEN lower(h.domain) LIKE '%youtube.com%' OR lower(h.domain) LIKE '%youtu.be%' OR lower(h.domain) LIKE '%vimeo.com%' THEN 'Videos'
-                WHEN lower(h.domain) LIKE '%github.com%' OR lower(h.domain) LIKE '%gitlab.com%' OR lower(h.domain) LIKE '%bitbucket.org%' THEN 'Repos'
-                WHEN lower(h.url) LIKE '%/docs%' OR lower(h.url) LIKE '%docs.%' OR lower(h.url) LIKE '%documentation%' OR lower(h.url) LIKE '%/learn%' OR lower(h.url) LIKE '%developer.%' THEN 'Docs'
+                WHEN lower(h.domain) LIKE '%youtube.com%'
+                    OR lower(h.domain) LIKE '%youtu.be%'
+                    OR lower(h.domain) LIKE '%vimeo.com%' THEN 'Videos'
+                WHEN lower(h.domain) LIKE '%github.com%'
+                    OR lower(h.domain) LIKE '%gitlab.com%'
+                    OR lower(h.domain) LIKE '%bitbucket.org%' THEN 'Repos'
+                WHEN lower(h.url) LIKE '%/docs%'
+                    OR lower(h.url) LIKE '%docs.%'
+                    OR lower(h.url) LIKE '%documentation%'
+                    OR lower(h.url) LIKE '%/learn%'
+                    OR lower(h.url) LIKE '%developer.%' THEN 'Docs'
                 ELSE 'Articles'
             END AS source_type,
             CAST(h.date_last_visit AS VARCHAR) AS visited
@@ -475,7 +551,11 @@ def load_cluster_items(db_path: Path, run_id: str) -> dict[int, list[ClusterItem
         rows = connection.execute(query, [run_id]).fetchall()
     for cluster_id, url_norm, title, domain, visit_count, source_type, visited in rows:
         visited_text = visited or "unknown-date"
-        path = Path("01 - Sources") / source_type / source_filename(title or "sem-titulo", visited_text, url_norm)
+        path = (
+            Path("01 - Sources")
+            / source_type
+            / source_filename(title or "sem-titulo", visited_text, url_norm)
+        )
         item = ClusterItem(
             cluster_id=int(cluster_id),
             url_norm=url_norm,

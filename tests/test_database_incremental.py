@@ -1,6 +1,10 @@
 import duckdb
 
-from second_brain.database import ensure_history_table, sync_history_database, upsert_history_rows
+from second_brain.database import (
+    ensure_history_table,
+    sync_history_database,
+    upsert_history_rows,
+)
 
 
 def history_row(
@@ -38,7 +42,10 @@ def test_ensure_history_table_creates_incremental_schema(tmp_path):
     db_path = tmp_path / "history.duckdb"
     with duckdb.connect(str(db_path)) as connection:
         ensure_history_table(connection)
-        columns = {row[1] for row in connection.execute("PRAGMA table_info('historico')").fetchall()}
+        columns = {
+            row[1]
+            for row in connection.execute("PRAGMA table_info('historico')").fetchall()
+        }
 
     assert {
         "history_key",
@@ -73,7 +80,10 @@ def test_ensure_history_table_adds_missing_metadata_columns(tmp_path):
         )
 
         ensure_history_table(connection)
-        columns = {row[1] for row in connection.execute("PRAGMA table_info('historico')").fetchall()}
+        columns = {
+            row[1]
+            for row in connection.execute("PRAGMA table_info('historico')").fetchall()
+        }
 
     assert {"first_seen_at", "last_seen_at", "updated_at"}.issubset(columns)
 
@@ -95,8 +105,28 @@ def test_upsert_updates_when_timestamp_is_newer(tmp_path):
     db_path = tmp_path / "history.duckdb"
     with duckdb.connect(str(db_path)) as connection:
         ensure_history_table(connection)
-        upsert_history_rows(connection, [history_row("https://example.com/docs", title="Old", visit_count=5, last_visit_time=100)])
-        upsert_history_rows(connection, [history_row("https://example.com/docs", title="New", visit_count=4, last_visit_time=200)])
+        upsert_history_rows(
+            connection,
+            [
+                history_row(
+                    "https://example.com/docs",
+                    title="Old",
+                    visit_count=5,
+                    last_visit_time=100,
+                ),
+            ],
+        )
+        upsert_history_rows(
+            connection,
+            [
+                history_row(
+                    "https://example.com/docs",
+                    title="New",
+                    visit_count=4,
+                    last_visit_time=200,
+                ),
+            ],
+        )
 
         row = fetch_history(connection)[0]
 
@@ -109,8 +139,28 @@ def test_upsert_updates_when_visit_count_is_higher(tmp_path):
     db_path = tmp_path / "history.duckdb"
     with duckdb.connect(str(db_path)) as connection:
         ensure_history_table(connection)
-        upsert_history_rows(connection, [history_row("https://example.com/docs", title="Old", visit_count=3, last_visit_time=200)])
-        upsert_history_rows(connection, [history_row("https://example.com/docs", title="More Visits", visit_count=7, last_visit_time=150)])
+        upsert_history_rows(
+            connection,
+            [
+                history_row(
+                    "https://example.com/docs",
+                    title="Old",
+                    visit_count=3,
+                    last_visit_time=200,
+                ),
+            ],
+        )
+        upsert_history_rows(
+            connection,
+            [
+                history_row(
+                    "https://example.com/docs",
+                    title="More Visits",
+                    visit_count=7,
+                    last_visit_time=150,
+                ),
+            ],
+        )
 
         row = fetch_history(connection)[0]
 
@@ -154,12 +204,26 @@ def test_legacy_schema_is_migrated_and_deduplicated(tmp_path):
         )
         connection.executemany(
             """
-            INSERT INTO historico (url, title, visit_count, last_visit_time, domain, date_last_visit, hour_last_visit, timestamp_last_visit, navegador)
+            INSERT INTO historico (
+                url, title, visit_count, last_visit_time,
+                domain, date_last_visit, hour_last_visit,
+                timestamp_last_visit, navegador
+            )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             [
-                history_row("https://example.com/docs/", title="Lower", visit_count=3, last_visit_time=100),
-                history_row("https://example.com/docs", title="Higher", visit_count=5, last_visit_time=90),
+                history_row(
+                    "https://example.com/docs/",
+                    title="Lower",
+                    visit_count=3,
+                    last_visit_time=100,
+                ),
+                history_row(
+                    "https://example.com/docs",
+                    title="Higher",
+                    visit_count=5,
+                    last_visit_time=90,
+                ),
             ],
         )
 

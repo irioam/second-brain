@@ -24,7 +24,11 @@ from .database import (
     upsert_embeddings,
 )
 from .models import ClusterItem, SemanticSourceRecord
-from .templates import render_aggregator_by_domain, render_cluster_note, render_clusters_index
+from .templates import (
+    render_aggregator_by_domain,
+    render_cluster_note,
+    render_clusters_index,
+)
 from .vault import ensure_vault_directories
 
 
@@ -40,13 +44,20 @@ def _safe_write(path: Path, content: str, dry_run: bool) -> str:
 
 def build_embedding_input(record: SemanticSourceRecord) -> str:
     """Build compact semantic text used as embedding input."""
-    return f"{record.title.strip()}\nDomain: {record.domain.strip()}\nType: {record.source_type}"
+    return (
+        f"{record.title.strip()}\n"
+        f"Domain: {record.domain.strip()}\n"
+        f"Type: {record.source_type}"
+    )
 
 
-def compute_embeddings(records: list[SemanticSourceRecord], model_name: str) -> dict[str, list[float]]:
+def compute_embeddings(
+    records: list[SemanticSourceRecord], model_name: str
+) -> dict[str, list[float]]:
     """Compute dense vectors for source records using sentence-transformers."""
     try:
         from sentence_transformers import SentenceTransformer
+
         cache_dir = (Path.cwd() / ".cache" / "huggingface").resolve()
         cache_dir.mkdir(parents=True, exist_ok=True)
         os.environ.setdefault("HF_HOME", str(cache_dir))
@@ -60,11 +71,16 @@ def compute_embeddings(records: list[SemanticSourceRecord], model_name: str) -> 
             by_url[record.url_norm] = vectors[idx].tolist()
         return by_url
     except Exception as exc:
-        print(f"[SEMANTIC] Falha ao carregar sentence-transformers ({exc}). Usando fallback local de hash embeddings.")
+        print(
+            f"[SEMANTIC] Falha ao carregar sentence-transformers ({exc}). "
+            "Usando fallback local de hash embeddings."
+        )
         return _compute_hash_embeddings(records)
 
 
-def _compute_hash_embeddings(records: list[SemanticSourceRecord], dimensions: int = 128) -> dict[str, list[float]]:
+def _compute_hash_embeddings(
+    records: list[SemanticSourceRecord], dimensions: int = 128
+) -> dict[str, list[float]]:
     """Compute deterministic hash-based embeddings when ML runtime is unavailable."""
     by_url: dict[str, list[float]] = {}
     for record in records:
@@ -92,7 +108,9 @@ def cluster_embeddings(
     try:
         from sklearn.cluster import KMeans
     except ImportError as exc:
-        raise RuntimeError("Dependencia ausente: instale scikit-learn para usar build-semantic.") from exc
+        raise RuntimeError(
+            "Dependencia ausente: instale scikit-learn para usar build-semantic."
+        ) from exc
 
     vectors = [embedding_by_url[record.url_norm] for record in ordered_records]
     cluster_count = max(1, min(n_clusters, len(vectors)))
@@ -116,7 +134,9 @@ def cluster_embeddings(
     return assignments, by_cluster
 
 
-def extract_top_terms(records: list[SemanticSourceRecord], max_terms: int = 5) -> list[str]:
+def extract_top_terms(
+    records: list[SemanticSourceRecord], max_terms: int = 5
+) -> list[str]:
     """Extract frequent non-trivial terms from cluster titles."""
     stopwords = {
         "the",
@@ -145,7 +165,9 @@ def extract_top_terms(records: list[SemanticSourceRecord], max_terms: int = 5) -
     return [term for term, _ in counts.most_common(max_terms)]
 
 
-def optional_enrich_cluster_with_llm(provider: str, top_terms: list[str]) -> tuple[str, str]:
+def optional_enrich_cluster_with_llm(
+    provider: str, top_terms: list[str]
+) -> tuple[str, str]:
     """Optional placeholder for future provider integration.
 
     V1 keeps local deterministic labels while provider integration is not configured.
@@ -153,7 +175,10 @@ def optional_enrich_cluster_with_llm(provider: str, top_terms: list[str]) -> tup
     label = " / ".join(top_terms[:3]) if top_terms else "Sem tema dominante"
     if provider == "none":
         return label, ""
-    summary = f"Resumo automatico indisponivel (provider={provider}). Cluster rotulado por termos frequentes."
+    summary = (
+        f"Resumo automatico indisponivel (provider={provider}). "
+        "Cluster rotulado por termos frequentes."
+    )
     return label, summary
 
 
@@ -174,7 +199,9 @@ def build_semantic(
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
     ensure_vault_directories(vault_path=vault_path, dry_run=dry_run)
 
-    records = load_semantic_sources(db_path=db_path, min_visit_count=min_visit_count, limit=limit)
+    records = load_semantic_sources(
+        db_path=db_path, min_visit_count=min_visit_count, limit=limit
+    )
     if not records:
         print("[SEMANTIC] Nenhuma fonte elegivel para clusterizacao.")
         return
@@ -184,13 +211,21 @@ def build_semantic(
         cached_embeddings = load_existing_embeddings(connection, model_name=model_name)
 
         # Step 1: fill missing embeddings.
-        missing_records = [record for record in records if record.url_norm not in cached_embeddings]
+        missing_records = [
+            record for record in records if record.url_norm not in cached_embeddings
+        ]
         if missing_records:
             new_embeddings = compute_embeddings(missing_records, model_name=model_name)
             upsert_embeddings(
                 connection,
                 (
-                    (record.url_norm, record.title, record.domain, model_name, new_embeddings[record.url_norm])
+                    (
+                        record.url_norm,
+                        record.title,
+                        record.domain,
+                        model_name,
+                        new_embeddings[record.url_norm],
+                    )
                     for record in missing_records
                 ),
             )
@@ -203,37 +238,53 @@ def build_semantic(
             if record.url_norm in cached_embeddings
         ]
         if not candidate_dims:
-            raise RuntimeError("Nao foi possivel obter embeddings para as fontes selecionadas.")
+            raise RuntimeError(
+                "Nao foi possivel obter embeddings para as fontes selecionadas."
+            )
 
         target_dim = Counter(candidate_dims).most_common(1)[0][0]
         stale_records = [
             record
             for record in records
-            if record.url_norm in cached_embeddings and len(cached_embeddings[record.url_norm]) != target_dim
+            if record.url_norm in cached_embeddings
+            and len(cached_embeddings[record.url_norm]) != target_dim
         ]
         if stale_records:
             print(
-                f"[SEMANTIC] Recomputando {len(stale_records)} embeddings com dimensao divergente "
+                f"[SEMANTIC] Recomputando {len(stale_records)} "
+                "embeddings com dimensao divergente "
                 f"(target_dim={target_dim})."
             )
-            refreshed_embeddings = compute_embeddings(stale_records, model_name=model_name)
+            refreshed_embeddings = compute_embeddings(
+                stale_records, model_name=model_name
+            )
             upsert_embeddings(
                 connection,
                 (
-                    (record.url_norm, record.title, record.domain, model_name, refreshed_embeddings[record.url_norm])
+                    (
+                        record.url_norm,
+                        record.title,
+                        record.domain,
+                        model_name,
+                        refreshed_embeddings[record.url_norm],
+                    )
                     for record in stale_records
                 ),
             )
             cached_embeddings.update(refreshed_embeddings)
 
-        assignments, by_cluster = cluster_embeddings(records, cached_embeddings, n_clusters=n_clusters)
+        assignments, by_cluster = cluster_embeddings(
+            records, cached_embeddings, n_clusters=n_clusters
+        )
 
         cluster_metadata_rows: list[tuple[int, str, str, list[str], int]] = []
         cluster_items: dict[int, list[ClusterItem]] = {}
         for cluster_id, cluster_records in sorted(by_cluster.items()):
             top_terms = extract_top_terms(cluster_records)
             label, summary = optional_enrich_cluster_with_llm(llm_provider, top_terms)
-            cluster_metadata_rows.append((cluster_id, label, summary, top_terms, len(cluster_records)))
+            cluster_metadata_rows.append(
+                (cluster_id, label, summary, top_terms, len(cluster_records))
+            )
 
             items: list[ClusterItem] = []
             for record in cluster_records:
@@ -251,7 +302,12 @@ def build_semantic(
             cluster_items[cluster_id] = items
 
         if not dry_run:
-            replace_cluster_run(connection, run_id=run_id, assignments=assignments, metadata=cluster_metadata_rows)
+            replace_cluster_run(
+                connection,
+                run_id=run_id,
+                assignments=assignments,
+                metadata=cluster_metadata_rows,
+            )
 
     metadata_dict = {
         cluster_id: {
@@ -270,7 +326,12 @@ def build_semantic(
         cluster_path = vault_path / "03 - Aggregators" / "Clusters" / cluster_filename
         status = _safe_write(
             cluster_path,
-            render_cluster_note(cluster_id=cluster_id, label=str(meta["label"]), summary=str(meta["summary"]), items=items),
+            render_cluster_note(
+                cluster_id=cluster_id,
+                label=str(meta["label"]),
+                summary=str(meta["summary"]),
+                items=items,
+            ),
             dry_run=dry_run,
         )
         counters[f"cluster_{status}"] += 1

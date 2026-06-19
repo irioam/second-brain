@@ -44,6 +44,7 @@ Homepage = "https://github.com/irioam/second-brain"
 
 [dependency-groups]
 dev = [
+    "pre-commit>=4.0.0",
     "pytest>=8.0.0",
     "ruff>=0.11.0",
 ]

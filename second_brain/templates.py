@@ -54,7 +54,9 @@ Navegador: {note.browser}
 
 def render_daily_note(visited: str, notes: Iterable[SourceNote]) -> str:
     """Render one daily index note linking to all source notes visited that day."""
-    sorted_notes = sorted(notes, key=lambda item: (-item.visit_count, item.title.lower()))
+    sorted_notes = sorted(
+        notes, key=lambda item: (-item.visit_count, item.title.lower())
+    )
     lines = [
         "---",
         f"date: {visited}",
@@ -68,14 +70,19 @@ def render_daily_note(visited: str, notes: Iterable[SourceNote]) -> str:
         "## Fontes visitadas",
         "",
     ]
-    lines.extend(f"- {note.obsidian_link} - {note.domain} ({note.visit_count} visitas)" for note in sorted_notes)
+    lines.extend(
+        f"- {note.obsidian_link} - {note.domain} ({note.visit_count} visitas)"
+        for note in sorted_notes
+    )
     lines.extend(["", "## Notas do dia", "", "- "])
     return "\n".join(lines) + "\n"
 
 
 def render_category_note(source_type: str, notes: Iterable[SourceNote]) -> str:
     """Render one category index note for the source section."""
-    sorted_notes = sorted(notes, key=lambda item: (-item.visit_count, item.title.lower()))
+    sorted_notes = sorted(
+        notes, key=lambda item: (-item.visit_count, item.title.lower())
+    )
     lines = [
         "---",
         "tags:",
@@ -89,7 +96,10 @@ def render_category_note(source_type: str, notes: Iterable[SourceNote]) -> str:
         "## Fontes",
         "",
     ]
-    lines.extend(f"- {note.obsidian_link} - {note.domain} ({note.visit_count} visitas)" for note in sorted_notes)
+    lines.extend(
+        f"- {note.obsidian_link} - {note.domain} ({note.visit_count} visitas)"
+        for note in sorted_notes
+    )
     return "\n".join(lines) + "\n"
 
 
@@ -124,15 +134,23 @@ def render_moc(notes: list[SourceNote]) -> str:
         "## Totais por tipo",
         "",
     ]
-    lines.extend(f"- {source_type}: {count}" for source_type, count in sorted(by_type.items()))
+    lines.extend(
+        f"- {source_type}: {count}" for source_type, count in sorted(by_type.items())
+    )
     lines.extend(["", "## Dias recentes", ""])
-    lines.extend(f"- [[03 - Daily/{day}|{day}]] ({by_day[day]} fontes)" for day in latest_days)
+    lines.extend(
+        f"- [[03 - Daily/{day}|{day}]] ({by_day[day]} fontes)" for day in latest_days
+    )
     return "\n".join(lines) + "\n"
 
 
-def render_cluster_note(cluster_id: int, label: str, summary: str, items: Iterable[ClusterItem]) -> str:
+def render_cluster_note(
+    cluster_id: int, label: str, summary: str, items: Iterable[ClusterItem]
+) -> str:
     """Render one semantic cluster note."""
-    sorted_items = sorted(items, key=lambda item: (-item.visit_count, item.title.lower()))
+    sorted_items = sorted(
+        items, key=lambda item: (-item.visit_count, item.title.lower())
+    )
     lines = [
         "---",
         "tags:",
@@ -151,7 +169,8 @@ def render_cluster_note(cluster_id: int, label: str, summary: str, items: Iterab
         "",
     ]
     lines.extend(
-        f"- [[{item.path.with_suffix('').as_posix()}|{item.title}]] - {item.domain} ({item.visit_count} visitas)"
+        f"- [[{item.path.with_suffix('').as_posix()}|{item.title}]]"
+        f" - {item.domain} ({item.visit_count} visitas)"
         for item in sorted_items
     )
     return "\n".join(lines) + "\n"
@@ -174,7 +193,10 @@ def render_clusters_index(clusters: dict[int, dict[str, object]]) -> str:
     for cluster_id in sorted(clusters):
         label = str(clusters[cluster_id].get("label", f"Cluster {cluster_id:03d}"))
         size = int(clusters[cluster_id].get("size", 0))
-        lines.append(f"- [[03 - Aggregators/Clusters/Cluster-{cluster_id:03d}|Cluster {cluster_id:03d}: {label}]] ({size} fontes)")
+        lines.append(
+            f"- [[03 - Aggregators/Clusters/Cluster-{cluster_id:03d}|"
+            f"Cluster {cluster_id:03d}: {label}]] ({size} fontes)"
+        )
     return "\n".join(lines) + "\n"
 
 
@@ -200,6 +222,9 @@ def render_aggregator_by_domain(clusters: dict[int, list[ClusterItem]]) -> str:
         "",
     ]
     for domain, cluster_ids in sorted(by_domain.items(), key=lambda kv: kv[0].lower()):
-        links = ", ".join(f"[[03 - Aggregators/Clusters/Cluster-{cluster_id:03d}|C{cluster_id:03d}]]" for cluster_id in sorted(cluster_ids))
+        links = ", ".join(
+            f"[[03 - Aggregators/Clusters/Cluster-{cluster_id:03d}|C{cluster_id:03d}]]"
+            for cluster_id in sorted(cluster_ids)
+        )
         lines.append(f"- {domain}: {links}")
     return "\n".join(lines) + "\n"

@@ -21,4 +21,4 @@ tags: [{{category}}, web-clip]
 - [[{{topic_2}}]]
 
 ## Notas pessoais
-- 
+-
