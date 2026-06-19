@@ -6,7 +6,6 @@ import sqlite3
 import tempfile
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Optional
 from urllib.parse import urlparse
 
 from .models import HistoryRow
@@ -44,7 +43,7 @@ def firefox_time_to_dt(firefox_time: int) -> datetime:
     return datetime(1970, 1, 1) + timedelta(microseconds=firefox_time)
 
 
-def format_visit_datetime(raw_timestamp: int, browser_name: Optional[str]) -> tuple[str, str, str]:
+def format_visit_datetime(raw_timestamp: int, browser_name: str | None) -> tuple[str, str, str]:
     """Formata timestamp bruto de visita em representações textuais padronizadas."""
     if browser_name and browser_name.startswith("firefox"):
         visit_dt = firefox_time_to_dt(raw_timestamp)
@@ -82,7 +81,7 @@ def discover_browser_histories(user_profile: str | None = None) -> list[tuple[st
     ] + firefox_histories
 
 
-def extract_history_to_rows(history_path: str | Path, browser_name: Optional[str] = None) -> list[HistoryRow]:
+def extract_history_to_rows(history_path: str | Path, browser_name: str | None = None) -> list[HistoryRow]:
     """Extrai histórico de um banco SQLite de navegador para uma lista normalizada."""
     history_path = str(history_path)
     if not os.path.exists(history_path):

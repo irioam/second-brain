@@ -1,7 +1,7 @@
 """Markdown renderers for the generated Obsidian vault."""
 
 from collections import defaultdict
-from typing import Iterable
+from collections.abc import Iterable
 
 from slugify import slugify
 
@@ -44,11 +44,11 @@ Navegador: {note.browser}
 
 ## Topicos relacionados
 
-- 
+-
 
 ## Notas pessoais
 
-- 
+-
 """
 
 
