@@ -1,0 +1,33 @@
+# Python cache/artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+.cache/huggingface/
+
+# Virtual environments
+.venv/
+venv/
+
+
+# Local runtime/config
+.env
+.env.*
+
+# Generated data and local databases
+data/*.duckdb
+data/*.db
+data/*.sqlite
+data/*.sqlite3
+data/history_copy*.db
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+
+# IA
+.plans/
