@@ -2,10 +2,8 @@
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Tuple
 
-
-HistoryRow = Tuple[str, str, int, int, str, str, str, str, Optional[str]]
+HistoryRow = tuple[str, str, int, int, str, str, str, str, str | None]
 
 
 @dataclass(frozen=True)

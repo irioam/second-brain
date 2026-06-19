@@ -3,7 +3,6 @@
 import os
 from pathlib import Path
 
-
 DEFAULT_DB_PATH = Path("./data/second_brain.duckdb")
 VAULT_PATH_ENV_VAR = "OBSIDIAN_VAULT_PATH"
 FALLBACK_VAULT_PATH = Path(r"C:\obsidian\my_vault\second_brain")
