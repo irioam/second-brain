@@ -10,6 +10,13 @@ This roadmap is intentionally practical. Second Brain should become more useful 
 - Add CI checks for pull requests.
 - Keep generated data, cache, and local databases out of Git.
 
+## Cross-Platform
+
+- Linux support: detect browser profiles under `~/.config`, `~/.mozilla`, etc.
+- macOS support: detect browser profiles under `~/Library/Application Support`.
+- Use platform-agnostic path resolution instead of hardcoded Windows paths.
+- Run CI tests on Linux and macOS in addition to Windows.
+
 ## High-Value Features
 
 - Better noise filtering for low-value browser history entries.

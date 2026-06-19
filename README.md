@@ -1,5 +1,11 @@
 # Second Brain for Obsidian
 
+[![CI](https://github.com/irioam/second-brain/actions/workflows/ci.yml/badge.svg)](https://github.com/irioam/second-brain/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/python-3.11+-blue)](https://www.python.org/downloads/)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
+> 📖 Leia este documento em português: [README pt-BR.md](README%20pt-BR.md)
+
 This project helps you turn your browsing history into a second brain that can be accessed through Obsidian.
 
 It turns links you visited into a local, searchable memory: URLs, titles, domains, visit dates, and visit counts become a DuckDB database and Markdown notes.
@@ -268,6 +274,17 @@ docs/
   incremental-history-upsert-plan.md
 ```
 
+## Current Limitations
+
+This project is actively developed. Some limitations exist:
+
+- **Windows only** — Currently supports Chrome, Edge, and Firefox on Windows. Cross-platform support (Linux/macOS) is planned.
+- **Metadata only** — The tool captures URLs, titles, visit counts, and timestamps. Page content is not captured or summarized.
+- **Local-first** — All data stays on your machine. No cloud sync or API calls by default.
+- **Semantic clustering is optional** — Embeddings and clustering require `scikit-learn` and `sentence-transformers`. Falls back to hash-based grouping when unavailable.
+
+See [docs/roadmap.md](docs/roadmap.md) for planned features.
+
 ## License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for the full license text.
@@ -276,4 +293,4 @@ You may use, modify, and distribute this project as long as you keep credit to t
 
 Copyright (c) 2026 Irio Andre Moesch.
 
-GitHub: [https://github.com/irioam](https://github.com/irioam)
+GitHub: [https://github.com/irioam/second-brain](https://github.com/irioam/second-brain)
