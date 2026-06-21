@@ -10,12 +10,21 @@ Este projeto ajuda voce a transformar seu historico de navegacao no seu segundo 
 
 Ele transforma links que voce visitou em uma memoria local e pesquisavel: URLs, titulos, dominios, datas de visita e contagem de acessos viram uma base DuckDB e notas Markdown.
 
+![Visão em grafo de um vault do Second Brain no Obsidian](images/vault_sample_obsidian.png)
+
 Ele faz quatro coisas principais:
 
 1. Le o historico local do Chrome, Edge e Firefox.
 2. Salva os dados em um banco DuckDB em `data/second_brain.duckdb`.
 3. Gera arquivos Markdown para abrir no Obsidian.
 4. Opcionalmente cria agrupamentos (clusters) semanticos por tema.
+
+```mermaid
+flowchart LR
+    A["Chrome / Edge / Firefox<br/>histórico de navegação"] -->|second-brain extract| B[("DuckDB<br/>data/second_brain.duckdb")]
+    B -->|second-brain build-vault| C["Notas Markdown<br/>cofre Obsidian"]
+    C --> D["Abrir no Obsidian<br/>(grafo acima)"]
+```
 
 O comando `extract` e incremental. Isso significa que ele nao apaga o banco quando o navegador esta sem historico. Se voce limpar o historico do navegador, os dados antigos ja salvos no DuckDB continuam guardados.
 

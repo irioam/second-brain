@@ -10,12 +10,21 @@ This project helps you turn your browsing history into a second brain that can b
 
 It turns links you visited into a local, searchable memory: URLs, titles, domains, visit dates, and visit counts become a DuckDB database and Markdown notes.
 
+![Obsidian graph view of a Second Brain vault](images/vault_sample_obsidian.png)
+
 It does four main things:
 
 1. Reads the local history from Chrome, Edge, and Firefox.
 2. Saves the data in a DuckDB database at `data/second_brain.duckdb`.
 3. Generates Markdown files that can be opened in Obsidian.
 4. Optionally creates semantic topic clusters.
+
+```mermaid
+flowchart LR
+    A["Chrome / Edge / Firefox<br/>browsing history"] -->|second-brain extract| B[("DuckDB<br/>data/second_brain.duckdb")]
+    B -->|second-brain build-vault| C["Markdown notes<br/>Obsidian vault"]
+    C --> D["Open in Obsidian<br/>(graph view above)"]
+```
 
 The `extract` command is incremental. This means it does not delete the database when the browser has no history. If you clear your browser history, the old data already saved in DuckDB remains preserved.
 
