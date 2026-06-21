@@ -63,6 +63,12 @@ You need:
 - `uv`, which installs and runs the project.
 - Obsidian, if you want to open the generated notes as a vault.
 
+Choose where you want to keep the project:
+
+```powershell
+cd C:\my_projects
+```
+
 Check Python:
 
 ```powershell

@@ -63,6 +63,12 @@ Você precisa de:
 - `uv`, que instala e executa o projeto.
 - Obsidian, se quiser abrir as notas geradas como um cofre.
 
+Escolha onde você quer guardar o projeto:
+
+```powershell
+cd C:\my_projects
+```
+
 Confira se o Python existe:
 
 ```powershell
