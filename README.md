@@ -4,19 +4,23 @@
 [![Python](https://img.shields.io/badge/python-3.11+-blue)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-> 📖 Leia este documento em português: [README pt-BR.md](README%20pt-BR.md)
+> Read this document in Portuguese: [README pt-BR.md](README%20pt-BR.md)
 
-This project helps you turn your browsing history into a second brain that can be accessed through Obsidian.
+If you research a lot, you have probably lost useful links in old tabs, cleared browser history, forgotten bookmarks, or scattered conversations.
 
-It turns links you visited into a local, searchable memory: URLs, titles, domains, visit dates, and visit counts become a DuckDB database and Markdown notes.
+Second Brain for Obsidian turns your browsing history into a local, searchable memory. It collects URLs, titles, domains, visit dates, and visit counts, stores them in DuckDB, and generates Markdown notes you can explore in Obsidian.
+
+The idea is simple: your research trail becomes a personal knowledge base, without depending on cloud sync and without sending your data anywhere by default.
 
 ![Obsidian graph view of a Second Brain vault](images/vault_sample_obsidian.png)
 
-It does four main things:
+## What It Does
 
-1. Reads the local history from Chrome, Edge, and Firefox.
+Second Brain currently does four main things:
+
+1. Reads local browsing history from Chrome, Edge, and Firefox.
 2. Saves the data in a DuckDB database at `data/second_brain.duckdb`.
-3. Generates Markdown files that can be opened in Obsidian.
+3. Generates Markdown files that can be opened as an Obsidian vault.
 4. Optionally creates semantic topic clusters.
 
 ```mermaid
@@ -26,81 +30,70 @@ flowchart LR
     C --> D["Open in Obsidian<br/>(graph view above)"]
 ```
 
-The `extract` command is incremental. This means it does not delete the database when the browser has no history. If you clear your browser history, the old data already saved in DuckDB remains preserved.
+The `extract` command is incremental. It does not delete the database when the browser has no history. If you clear your browser history, data already saved in DuckDB remains preserved.
 
 ## Why Use It?
 
-This project is useful if you research a lot and later lose important links along the way.
+Use this project if you research, study, write, build software, analyze topics, or use Obsidian as a knowledge base.
 
 In practice, it helps you:
 
 - Find pages you already visited.
-- Preserve references even after clearing your browser history.
-- Understand which topics you researched over time.
+- Preserve references after clearing browser history.
+- Review what you researched over time.
 - Build a personal knowledge base for study, work, and research.
-- Keep your data on your own computer.
+- Keep sensitive browsing metadata on your own computer.
 
-Brutally honest: this project is not for everyone. If you only browse casually, your browser history may already be enough. It makes more sense for students, developers, researchers, writers, analysts, and people who use Obsidian as a knowledge base.
+Brutally honest: this project is not for everyone. If you browse casually and only need a normal browser history, your browser may already be enough.
 
 ## What It Does Not Do Yet
 
-Today, the project organizes browsing history and creates structured notes, but it does not yet capture or automatically summarize the full content of web pages.
+Today, the project organizes browsing history and creates structured notes. It does not yet capture or automatically summarize the full content of web pages.
 
 The generated notes are a starting point. They help you find, classify, and review links, but the final curation is still yours.
 
-## Before You Start
+## Quick Start
 
 You need:
 
 - Windows.
 - PowerShell.
+- Git.
 - Python 3.11 or newer.
 - `uv`, which installs and runs the project.
 - Obsidian, if you want to open the generated notes as a vault.
 
-To open PowerShell:
-
-1. Press the Windows key.
-2. Type `PowerShell`.
-3. Open the `PowerShell` app.
-
-Then go to the project folder:
-
-```powershell
-cd C:\Users\<your_user>\Documents\second_brain\second_brain
-```
-
-## Step-By-Step Installation
-
-### 1. Check If Python Exists
-
-In PowerShell, run:
+Check Python:
 
 ```powershell
 python --version
 ```
 
-If you see something like `Python 3.11.9`, you are good to go.
-
-### 2. Install `uv`, If You Do Not Have It Yet
+Install `uv`, if you do not have it yet:
 
 ```powershell
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
-Then close and reopen PowerShell.
+Close and reopen PowerShell, then clone the project:
 
-### 3. Install The Project Dependencies
+```powershell
+git clone https://github.com/irioam/second-brain.git
+```
 
-Inside the project folder, run:
+Go to the project folder:
+
+```powershell
+cd second-brain
+```
+
+Install the project dependencies:
 
 ```powershell
 uv sync
 ```
 
-This command downloads everything the project needs to work.
-
-### 4. Test If The CLI Responds
+Test if the CLI responds:
 
 ```powershell
 uv run second-brain --help
@@ -246,17 +239,53 @@ The Obsidian notes follow a structure similar to this:
 99 - Attachments/
 ```
 
-The full example is available in `vault_structure_sample.md`.
+The full example is available in [vault_structure_sample.md](vault_structure_sample.md).
 
-## Important Notes
+## Privacy
+
+This project handles browser history, which can be sensitive. By default:
 
 - Your data stays local on your computer.
-- Avoid publishing the DuckDB database or generated notes before reviewing them.
-- Chrome, Edge, and Firefox store history in SQLite databases.
-- This project reads that data and consolidates everything into DuckDB.
-- Clearing your browser history does not automatically delete the DuckDB data.
+- Browser history is consolidated into DuckDB locally.
+- Generated Markdown notes are written only to the vault path you choose.
 - Existing Markdown files in Obsidian are not overwritten.
-- Use `--dry-run` when you want to test without creating files.
+- External API calls are not required by default.
+
+Avoid publishing the DuckDB database or generated notes before reviewing them. Read [docs/privacy.md](docs/privacy.md) for details.
+
+## Current Limitations
+
+This project is actively developed. Some limitations exist:
+
+- **Windows only** - Currently supports Chrome, Edge, and Firefox on Windows. Cross-platform support for Linux and macOS is planned.
+- **Metadata only** - The tool captures URLs, titles, domains, visit counts, and timestamps. Page content is not captured or summarized.
+- **Local-first** - All data stays on your machine. No cloud sync or API calls by default.
+- **Semantic clustering is optional** - Embeddings and clustering require `scikit-learn` and `sentence-transformers`. The project falls back to hash-based grouping when unavailable.
+
+See [docs/roadmap.md](docs/roadmap.md) for planned features.
+
+## How To Contribute
+
+Contributions are welcome, especially changes that make the project more useful without compromising privacy.
+
+High-value areas include:
+
+- Linux and macOS support.
+- Better filters for noisy browser history entries.
+- A search command for finding previously visited sources.
+- Improvements to Obsidian vault generation.
+- Tests for database behavior, CLI commands, and Markdown output.
+- Documentation for first-time users.
+
+Before opening a pull request, read [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/privacy.md](docs/privacy.md).
+
+## Like The Project?
+
+If this project helped you recover links, organize research, or build a personal knowledge base in Obsidian, consider giving it a Star on GitHub.
+
+That helps other people discover the project and shows that it is worth continuing to improve.
+
+Suggestions are also welcome. Open an issue if you have an idea, a bug report, or a practical use case the project should support.
 
 ## Detailed Documentation
 
@@ -264,7 +293,8 @@ For technical details, read:
 
 - [CLI Reference](docs/cli-reference.md)
 - [Internal Pipeline](docs/pipeline-overview.md)
-- [Incremental Upsert Plan](.plans/incremental-history-upsert-plan.md)
+- [Roadmap](docs/roadmap.md)
+- [Privacy](docs/privacy.md)
 
 ## Project Structure
 
@@ -280,19 +310,9 @@ README.md
 docs/
   cli-reference.md
   pipeline-overview.md
-  incremental-history-upsert-plan.md
+  privacy.md
+  roadmap.md
 ```
-
-## Current Limitations
-
-This project is actively developed. Some limitations exist:
-
-- **Windows only** — Currently supports Chrome, Edge, and Firefox on Windows. Cross-platform support (Linux/macOS) is planned.
-- **Metadata only** — The tool captures URLs, titles, visit counts, and timestamps. Page content is not captured or summarized.
-- **Local-first** — All data stays on your machine. No cloud sync or API calls by default.
-- **Semantic clustering is optional** — Embeddings and clustering require `scikit-learn` and `sentence-transformers`. Falls back to hash-based grouping when unavailable.
-
-See [docs/roadmap.md](docs/roadmap.md) for planned features.
 
 ## License
 

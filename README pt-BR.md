@@ -4,20 +4,24 @@
 [![Python](https://img.shields.io/badge/python-3.11+-blue)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-> 📖 Read this document in English: [README.md](README.md)
+> Leia este documento em inglês: [README.md](README.md)
 
-Este projeto ajuda voce a transformar seu historico de navegacao no seu segundo cérebro que pode ser acessado pelo Obsidian.
+Se você pesquisa muito, provavelmente já perdeu links importantes no meio de abas, histórico limpo, favoritos esquecidos ou conversas antigas.
 
-Ele transforma links que voce visitou em uma memoria local e pesquisavel: URLs, titulos, dominios, datas de visita e contagem de acessos viram uma base DuckDB e notas Markdown.
+O Second Brain para Obsidian transforma seu histórico de navegação em uma memória local e pesquisável. Ele coleta URLs, títulos, domínios, datas de visita e contagem de acessos, salva tudo em DuckDB e gera notas Markdown para você explorar no Obsidian.
+
+A ideia é simples: sua trilha de pesquisa vira uma base de conhecimento pessoal, sem depender de nuvem e sem enviar seus dados por padrão.
 
 ![Visão em grafo de um vault do Second Brain no Obsidian](images/vault_sample_obsidian.png)
 
-Ele faz quatro coisas principais:
+## O que ele faz
 
-1. Le o historico local do Chrome, Edge e Firefox.
+Hoje o Second Brain faz quatro coisas principais:
+
+1. Lê o histórico local do Chrome, Edge e Firefox.
 2. Salva os dados em um banco DuckDB em `data/second_brain.duckdb`.
-3. Gera arquivos Markdown para abrir no Obsidian.
-4. Opcionalmente cria agrupamentos (clusters) semanticos por tema.
+3. Gera arquivos Markdown para abrir como um cofre no Obsidian.
+4. Opcionalmente cria agrupamentos semânticos por tema.
 
 ```mermaid
 flowchart LR
@@ -26,93 +30,82 @@ flowchart LR
     C --> D["Abrir no Obsidian<br/>(grafo acima)"]
 ```
 
-O comando `extract` e incremental. Isso significa que ele nao apaga o banco quando o navegador esta sem historico. Se voce limpar o historico do navegador, os dados antigos ja salvos no DuckDB continuam guardados.
+O comando `extract` é incremental. Ele não apaga o banco quando o navegador está sem histórico. Se você limpar o histórico do navegador, os dados antigos já salvos no DuckDB continuam preservados.
 
 ## Por que usar?
 
-Este projeto e util se voce pesquisa muito e depois perde links importantes no meio do caminho.
+Use este projeto se você pesquisa, estuda, escreve, desenvolve software, analisa temas ou usa o Obsidian como base de conhecimento.
 
-Na pratica, ele ajuda voce a:
+Na prática, ele ajuda você a:
 
-- Reencontrar paginas que ja visitou.
-- Preservar referencias mesmo depois de limpar o historico do navegador.
-- Entender quais temas voce pesquisou ao longo do tempo.
+- Reencontrar páginas que já visitou.
+- Preservar referências depois de limpar o histórico do navegador.
+- Revisar o que você pesquisou ao longo do tempo.
 - Criar uma base pessoal de estudos, trabalho e pesquisa.
-- Manter seus dados no seu proprio computador.
+- Manter metadados sensíveis de navegação no seu próprio computador.
 
-Brutalmente honesto: este projeto nao e para todo mundo. Se voce so navega casualmente, talvez o historico do navegador ja baste. Ele faz mais sentido para estudantes, desenvolvedores, pesquisadores, escritores, analistas e pessoas que usam o Obsidian como base de conhecimento.
+Brutalmente honesto: este projeto não é para todo mundo. Se você só navega casualmente e precisa apenas de um histórico normal, talvez o navegador já baste.
 
-## O que ele ainda nao faz
+## O que ele ainda não faz
 
-Hoje o projeto organiza o historico e cria notas estruturadas, mas ainda nao captura nem resume automaticamente o conteudo completo das paginas.
+Hoje o projeto organiza o histórico e cria notas estruturadas. Ele ainda não captura nem resume automaticamente o conteúdo completo das páginas.
 
-As notas geradas sao um ponto de partida. Elas ajudam voce a encontrar, classificar e revisar links, mas a curadoria final ainda e sua.
+As notas geradas são um ponto de partida. Elas ajudam você a encontrar, classificar e revisar links, mas a curadoria final ainda é sua.
 
-## Antes de comecar
+## Comece rápido
 
-Voce precisa de:
+Você precisa de:
 
 - Windows.
 - PowerShell.
+- Git.
 - Python 3.11 ou mais novo.
 - `uv`, que instala e executa o projeto.
 - Obsidian, se quiser abrir as notas geradas como um cofre.
 
-Para abrir o PowerShell:
-
-1. Aperte a tecla Windows.
-2. Digite `PowerShell`.
-3. Abra o aplicativo `PowerShell`.
-
-Depois entre na pasta do projeto:
-
-```powershell
-cd C:\Users\<seu_usuario>\Documents\second_brain\second_brain
-```
-
-## Instalacao passo a passo
-
-### 1. Confira se o Python existe
-
-No PowerShell, rode:
+Confira se o Python existe:
 
 ```powershell
 python --version
 ```
 
-Se aparecer algo como `Python 3.11.9`, esta certo.
-
-### 2. Instale o `uv`, se ainda nao tiver
+Instale o `uv`, se ainda não tiver:
 
 ```powershell
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
-Depois feche e abra o PowerShell de novo.
+Feche e abra o PowerShell de novo, então clone o projeto:
 
-### 3. Instale as dependencias do projeto
+```powershell
+git clone https://github.com/irioam/second-brain.git
+```
 
-Dentro da pasta do projeto, rode:
+Entre na pasta do projeto:
+
+```powershell
+cd second-brain
+```
+
+Instale as dependências do projeto:
 
 ```powershell
 uv sync
 ```
 
-Esse comando baixa tudo que o projeto precisa para funcionar.
-
-### 4. Teste se a CLI responde
+Teste se a CLI responde:
 
 ```powershell
 uv run second-brain --help
 ```
 
-Se aparecer uma lista de comandos, a instalacao funcionou.
+Se aparecer uma lista de comandos, a instalação funcionou.
 
 ## Comandos principais
 
 ### `extract`
 
-Le o historico dos navegadores e sincroniza o banco DuckDB.
+Lê o histórico dos navegadores e sincroniza o banco DuckDB.
 
 ```powershell
 uv run second-brain extract
@@ -122,13 +115,13 @@ Use este comando quando quiser atualizar o banco com visitas novas.
 
 ### `build-vault --dry-run`
 
-Simula a criacao das notas do Obsidian, sem escrever arquivos.
+Simula a criação das notas do Obsidian, sem escrever arquivos.
 
 ```powershell
 uv run second-brain build-vault --dry-run
 ```
 
-Use este comando para testar com seguranca.
+Use este comando para testar com segurança.
 
 ### `build-vault`
 
@@ -146,7 +139,7 @@ uv run second-brain build-vault --vault-path "C:\obsidian\my_vault\second_brain"
 
 ### `all`
 
-Faz duas etapas em sequencia:
+Faz duas etapas em sequência:
 
 1. Executa `extract`.
 2. Executa `build-vault`.
@@ -169,7 +162,7 @@ uv run second-brain all --dry-run
 
 ### `build-semantic --dry-run`
 
-Simula os agrupamentos semanticos.
+Simula os agrupamentos semânticos.
 
 ```powershell
 uv run second-brain build-semantic --dry-run
@@ -183,11 +176,11 @@ Cria agregadores por tema em `03 - Aggregators`.
 uv run second-brain build-semantic
 ```
 
-Na primeira execucao, esse comando pode demorar porque pode carregar ou baixar modelos de embeddings.
+Na primeira execução, esse comando pode demorar porque pode carregar ou baixar modelos de embeddings.
 
 ## Receitas prontas
 
-### Primeira execucao segura
+### Primeira execução segura
 
 Use estes comandos para testar sem criar notas ainda:
 
@@ -196,13 +189,13 @@ uv run second-brain extract
 uv run second-brain build-vault --dry-run
 ```
 
-### Execucao completa
+### Execução completa
 
 ```powershell
 uv run second-brain all
 ```
 
-### Execucao completa com caminho do cofre
+### Execução completa com caminho do cofre
 
 ```powershell
 uv run second-brain all --vault-path "C:\obsidian\my_vault\second_brain"
@@ -214,18 +207,18 @@ uv run second-brain all --vault-path "C:\obsidian\my_vault\second_brain"
 uv run pytest
 ```
 
-## Opcoes uteis da CLI
+## Opções úteis da CLI
 
-| Opcao | Para que serve |
+| Opção | Para que serve |
 |---|---|
 | `--db-path` | Muda o caminho do banco DuckDB. |
 | `--vault-path` | Muda o caminho do cofre Obsidian. |
 | `--dry-run` | Mostra o que aconteceria sem escrever arquivos. |
 | `--limit` | Limita a quantidade de notas ou fontes processadas. |
-| `--min-visit-count` | Usa apenas URLs com uma quantidade minima de visitas. |
-| `--n-clusters` | Define quantos grupos semanticos serao criados. |
+| `--min-visit-count` | Usa apenas URLs com uma quantidade mínima de visitas. |
+| `--n-clusters` | Define quantos grupos semânticos serão criados. |
 | `--embedding-model` | Escolhe o modelo usado para embeddings. |
-| `--llm-provider` | Escolhe um provedor para rotulos/resumos. O padrao e `none`. |
+| `--llm-provider` | Escolhe um provedor para rótulos/resumos. O padrão é `none`. |
 
 ## Onde os arquivos ficam
 
@@ -246,25 +239,62 @@ As notas do Obsidian seguem uma estrutura parecida com esta:
 99 - Attachments/
 ```
 
-O exemplo completo esta em `vault_structure_sample.md`.
+O exemplo completo está em [vault_structure_sample.md](vault_structure_sample.md).
 
-## Cuidados importantes
+## Privacidade
 
-- Os dados ficam locais no seu computador.
-- Evite publicar o banco DuckDB ou as notas geradas sem revisar antes.
-- Chrome, Edge e Firefox guardam o historico em bancos SQLite.
-- Este projeto le esses dados e consolida tudo em DuckDB.
-- Apagar o historico do navegador nao apaga automaticamente o DuckDB.
-- Arquivos Markdown existentes no Obsidian nao sao sobrescritos.
-- Use `--dry-run` quando quiser testar sem criar arquivos.
+Este projeto lida com histórico de navegação, que pode ser sensível. Por padrão:
 
-## Documentacao detalhada
+- Seus dados ficam locais no seu computador.
+- O histórico dos navegadores é consolidado localmente no DuckDB.
+- As notas Markdown são escritas apenas no caminho de cofre que você escolher.
+- Arquivos Markdown existentes no Obsidian não são sobrescritos.
+- Chamadas para APIs externas não são obrigatórias por padrão.
 
-Para detalhes tecnicos, leia:
+Evite publicar o banco DuckDB ou as notas geradas sem revisar antes. Leia [docs/privacy.md](docs/privacy.md) para detalhes.
 
-- [Referencia da CLI](docs/cli-reference.md)
+## Limitações atuais
+
+Este projeto está em desenvolvimento ativo. Algumas limitações existem:
+
+- **Apenas Windows** - Atualmente suporta Chrome, Edge e Firefox no Windows. Suporte cross-platform para Linux e macOS está planejado.
+- **Apenas metadados** - A ferramenta captura URLs, títulos, domínios, contagem de visitas e timestamps. O conteúdo das páginas não é capturado ou resumido.
+- **Local-first** - Todos os dados ficam na sua máquina. Sem sync em nuvem ou chamadas de API por padrão.
+- **Clustering semântico é opcional** - Embeddings e clusterização exigem `scikit-learn` e `sentence-transformers`. O projeto faz fallback para agrupamento por hash quando indisponível.
+
+Consulte [docs/roadmap.md](docs/roadmap.md) para funcionalidades planejadas.
+
+## Como contribuir
+
+Contribuições são bem-vindas, principalmente em áreas que deixam o projeto mais útil sem comprometer privacidade.
+
+Áreas de alto valor:
+
+- Suporte a Linux e macOS.
+- Filtros melhores para remover ruído do histórico.
+- Um comando de busca para encontrar fontes já visitadas.
+- Melhorias na geração do cofre Obsidian.
+- Testes para banco, CLI e saída Markdown.
+- Documentação para usuários iniciantes.
+
+Antes de abrir um PR, leia [CONTRIBUTING.md](CONTRIBUTING.md) e [docs/privacy.md](docs/privacy.md).
+
+## Gostou do projeto?
+
+Se este projeto ajudou você a recuperar links, organizar pesquisas ou criar uma base pessoal no Obsidian, considere deixar uma Star no GitHub.
+
+Isso ajuda outras pessoas a encontrarem o projeto e mostra que vale a pena continuar evoluindo a ferramenta.
+
+Sugestões também são bem-vindas. Abra uma issue se tiver uma ideia, um bug ou um caso de uso prático que o projeto deveria atender.
+
+## Documentação detalhada
+
+Para detalhes técnicos, leia:
+
+- [Referência da CLI](docs/cli-reference.md)
 - [Pipeline interno](docs/pipeline-overview.md)
-- [Plano do upsert incremental](.plans/incremental-history-upsert-plan.md)
+- [Roadmap](docs/roadmap.md)
+- [Privacidade](docs/privacy.md)
 
 ## Estrutura resumida do projeto
 
@@ -280,19 +310,9 @@ README.md
 docs/
   cli-reference.md
   pipeline-overview.md
-  incremental-history-upsert-plan.md
+  privacy.md
+  roadmap.md
 ```
-
-## Limitações atuais
-
-Este projeto está em desenvolvimento ativo. Algumas limitações existem:
-
-- **Apenas Windows** — Atualmente suporta Chrome, Edge e Firefox no Windows. Suporte cross-platform (Linux/macOS) está planejado.
-- **Apenas metadados** — A ferramenta captura URLs, títulos, contagem de visitas e timestamps. O conteúdo das páginas não é capturado ou resumido.
-- **Local-first** — Todos os dados ficam na sua máquina. Sem sync em nuvem ou chamadas de API por padrão.
-- **Clustering semântico é opcional** — Embeddings e clusterização exigem `scikit-learn` e `sentence-transformers`. Faz fallback para agrupamento por hash quando indisponível.
-
-Consulte [docs/roadmap.md](docs/roadmap.md) para funcionalidades planejadas.
 
 ## Licença
 
