@@ -57,10 +57,27 @@ def build_vault(
     for note in notes:
         notes_by_day[note.visited].append(note)
 
+    sorted_days = sorted(notes_by_day)
+    previous_by_day = {
+        day: sorted_days[index - 1] if index > 0 else None
+        for index, day in enumerate(sorted_days)
+    }
+    next_by_day = {
+        day: sorted_days[index + 1] if index < len(sorted_days) - 1 else None
+        for index, day in enumerate(sorted_days)
+    }
+
     for visited, daily_notes in notes_by_day.items():
         daily_path = vault_path / "03 - Daily" / f"{visited}.md"
         status = safe_write(
-            daily_path, render_daily_note(visited, daily_notes), dry_run=dry_run
+            daily_path,
+            render_daily_note(
+                visited,
+                daily_notes,
+                previous_day=previous_by_day[visited],
+                next_day=next_by_day[visited],
+            ),
+            dry_run=dry_run,
         )
         counters[f"daily_{status}"] += 1
 

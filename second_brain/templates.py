@@ -17,11 +17,13 @@ def yaml_quote(value: str) -> str:
 def render_source_note(note: SourceNote) -> str:
     """Render one source note as Markdown with Obsidian-friendly frontmatter."""
     tag_domain = slugify(note.domain).replace("-", "_")
+    daily_note = f"[[03 - Daily/{note.visited}|{note.visited}]]"
     return f"""---
 title: {yaml_quote(note.title)}
 url: {yaml_quote(note.url)}
 domain: {yaml_quote(note.domain)}
 visited: {note.visited}
+daily_note: {yaml_quote(daily_note)}
 visit_count: {note.visit_count}
 browser: {yaml_quote(note.browser)}
 source_type: {yaml_quote(note.source_type)}
@@ -52,10 +54,33 @@ Navegador: {note.browser}
 """
 
 
-def render_daily_note(visited: str, notes: Iterable[SourceNote]) -> str:
+def render_daily_note(
+    visited: str,
+    notes: Iterable[SourceNote],
+    previous_day: str | None = None,
+    next_day: str | None = None,
+) -> str:
     """Render one daily index note linking to all source notes visited that day."""
-    sorted_notes = sorted(
-        notes, key=lambda item: (-item.visit_count, item.title.lower())
+    grouped_notes: dict[tuple[str, str], list[SourceNote]] = defaultdict(list)
+    for note in notes:
+        grouped_notes[(note.domain, note.title)].append(note)
+
+    sorted_groups = sorted(
+        grouped_notes.items(),
+        key=lambda item: (
+            -sum(note.visit_count for note in item[1]),
+            item[0][1].lower(),
+            item[0][0].lower(),
+        ),
+    )
+
+    previous_link = (
+        f"[[03 - Daily/{previous_day}|Dia anterior]]"
+        if previous_day
+        else "Dia anterior: -"
+    )
+    next_link = (
+        f"[[03 - Daily/{next_day}|Proximo dia]]" if next_day else "Proximo dia: -"
     )
     lines = [
         "---",
@@ -67,13 +92,24 @@ def render_daily_note(visited: str, notes: Iterable[SourceNote]) -> str:
         "",
         f"# {visited}",
         "",
+        f"{previous_link} | {next_link}",
+        "",
         "## Fontes visitadas",
         "",
     ]
-    lines.extend(
-        f"- {note.obsidian_link} - {note.domain} ({note.visit_count} visitas)"
-        for note in sorted_notes
-    )
+    for (domain, title), group_notes in sorted_groups:
+        sorted_notes = sorted(
+            group_notes, key=lambda item: (-item.visit_count, item.title.lower())
+        )
+        total_visits = sum(note.visit_count for note in sorted_notes)
+        lines.append(
+            f"- {title} - {domain} ({len(sorted_notes)} fontes, {total_visits} visitas)"
+        )
+        lines.extend(
+            f"  - {note.obsidian_link} ({note.visit_count} visitas)"
+            for note in sorted_notes
+        )
+        lines.append("")
     lines.extend(["", "## Notas do dia", "", "- "])
     return "\n".join(lines) + "\n"
 
