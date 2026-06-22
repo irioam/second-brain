@@ -61,7 +61,7 @@ You need:
 - Git.
 - Python 3.11 or newer.
 - `uv`, which installs and runs the project.
-- Obsidian, if you want to open the generated notes as a vault.
+- Obsidian, if you want to open the generated notes as a vault. [Download - Obsidian](https://obsidian.md/download)
 
 Choose where you want to keep the project:
 
@@ -145,10 +145,11 @@ uv run second-brain build-vault --vault-path "C:\obsidian\my_vault\second_brain"
 
 ### `all`
 
-Runs two steps in sequence:
+Runs the full pipeline in sequence:
 
 1. Runs `extract`.
 2. Runs `build-vault`.
+3. Runs `build-semantic`.
 
 ```powershell
 uv run second-brain all
@@ -165,6 +166,9 @@ To simulate without writing files:
 ```powershell
 uv run second-brain all --dry-run
 ```
+
+On the first full run, the semantic step may take longer because it may load or
+download embedding models.
 
 ### `build-semantic --dry-run`
 
@@ -225,6 +229,34 @@ uv run pytest
 | `--n-clusters` | Defines how many semantic groups will be created. |
 | `--embedding-model` | Chooses the model used for embeddings. |
 | `--llm-provider` | Chooses a provider for labels/summaries. The default is `none`. |
+
+## Semantic Options: Embeddings and LLM Provider
+
+`--embedding-model` controls which `sentence-transformers` model is used to
+turn each source into an embedding vector. The default is
+`sentence-transformers/all-MiniLM-L6-v2`.
+
+Today, the semantic input is intentionally compact. Each source is represented
+by its title, domain, and source type. Those embeddings directly influence the
+semantic clusters created by `build-semantic` and `all`.
+
+If the model or local ML runtime cannot be loaded, the project falls back to a
+deterministic local hash-based embedding. This keeps the command usable, but the
+semantic quality may be lower than with a real embedding model.
+
+`--llm-provider` accepts `none`, `openai`, `anthropic`, and `gemini`. The default
+is `none`. In the current version, this option does not call external APIs.
+Cluster labels are generated locally from frequent terms.
+
+If you choose a provider other than `none`, the generated cluster summary only
+states that automatic summarization is unavailable for that provider. Real LLM
+integration is planned for a future version.
+
+Recommended local usage:
+
+```powershell
+uv run second-brain build-semantic --embedding-model sentence-transformers/all-MiniLM-L6-v2 --llm-provider none
+```
 
 ## Where Files Are Stored
 
