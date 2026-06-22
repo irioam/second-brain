@@ -20,18 +20,83 @@ def run_extract(db_path: Path = DEFAULT_DB_PATH) -> int:
     return sync_history_database(browser_histories, db_path=db_path)
 
 
+def add_db_path_argument(parser: argparse.ArgumentParser) -> None:
+    """Add the shared DuckDB path option."""
+    parser.add_argument(
+        "--db-path",
+        type=Path,
+        default=DEFAULT_DB_PATH,
+        help="Path to the DuckDB database.",
+    )
+
+
+def add_vault_arguments(parser: argparse.ArgumentParser) -> None:
+    """Add shared vault-generation options."""
+    add_db_path_argument(parser)
+    parser.add_argument(
+        "--vault-path",
+        type=Path,
+        default=None,
+        metavar="PATH",
+        help=(
+            "Path to the Obsidian vault. Use quotes when the path contains spaces. "
+            "If omitted, uses OBSIDIAN_VAULT_PATH or the project fallback."
+        ),
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show what would happen without writing vault files.",
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Limit the number of sources processed.",
+    )
+    parser.add_argument(
+        "--min-visit-count",
+        type=int,
+        default=None,
+        help="Minimum visit count filter. If omitted, all visits are included.",
+    )
+
+
+def add_semantic_arguments(parser: argparse.ArgumentParser) -> None:
+    """Add shared semantic clustering options."""
+    parser.add_argument(
+        "--n-clusters",
+        type=int,
+        default=SEMANTIC_DEFAULT_N_CLUSTERS,
+        help="Target number of semantic clusters.",
+    )
+    parser.add_argument(
+        "--embedding-model",
+        type=str,
+        default=EMBEDDING_MODEL_NAME,
+        help="Name of the sentence-transformers embedding model.",
+    )
+    parser.add_argument(
+        "--llm-provider",
+        choices=("none", "openai", "anthropic", "gemini"),
+        default="none",
+        help="Optional provider for cluster labels and summaries.",
+    )
+
+
 def parse_args() -> argparse.Namespace:
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
         description=(
-            "Second Brain: extrai historico de navegacao e gera cofre Obsidian."
+            "Second Brain: extract browser history and build an Obsidian vault."
         ),
         formatter_class=argparse.RawTextHelpFormatter,
         epilog=(
-            "Exemplos:\n"
+            "Examples:\n"
             "  uv run second-brain extract\n"
             "  uv run second-brain build-vault --dry-run "
             '--vault-path "C:\\obsidian\\my_vault\\second_brain"\n'
+            "  uv run second-brain build-semantic --dry-run\n"
             "  uv run second-brain all "
             '--vault-path "C:\\obsidian\\my_vault\\second_brain"'
         ),
@@ -40,158 +105,55 @@ def parse_args() -> argparse.Namespace:
 
     extract_parser = subparsers.add_parser(
         "extract",
-        help="Sincroniza historico dos navegadores para DuckDB.",
+        help="Sync browser history into DuckDB.",
         formatter_class=argparse.RawTextHelpFormatter,
         epilog=(
-            "Exemplo:\n"
+            "Example:\n"
             "  uv run second-brain extract --db-path ./data/second_brain.duckdb"
         ),
     )
-    extract_parser.add_argument(
-        "--db-path", type=Path, default=DEFAULT_DB_PATH, help="Caminho do banco DuckDB."
-    )
+    add_db_path_argument(extract_parser)
 
     vault_parser = subparsers.add_parser(
         "build-vault",
-        help="Gera o cofre Obsidian a partir do DuckDB.",
+        help="Build Obsidian Markdown notes from DuckDB.",
         formatter_class=argparse.RawTextHelpFormatter,
         epilog=(
-            "Exemplos:\n"
+            "Examples:\n"
             "  uv run second-brain build-vault --dry-run\n"
             "  uv run second-brain build-vault --dry-run "
             '--vault-path "C:\\obsidian\\my_vault\\second_brain"'
         ),
     )
-    vault_parser.add_argument(
-        "--db-path", type=Path, default=DEFAULT_DB_PATH, help="Caminho do banco DuckDB."
-    )
-    vault_parser.add_argument(
-        "--vault-path",
-        type=Path,
-        default=None,
-        metavar="PATH",
-        help=(
-            "Caminho do cofre Obsidian. Use aspas quando houver espacos no caminho. "
-            "Se omitido, usa OBSIDIAN_VAULT_PATH ou o fallback do projeto."
-        ),
-    )
-    vault_parser.add_argument(
-        "--dry-run", action="store_true", help="Simula a geracao sem escrever arquivos."
-    )
-    vault_parser.add_argument(
-        "--limit",
-        type=int,
-        default=None,
-        help="Limita a quantidade de notas de fonte geradas.",
-    )
-    vault_parser.add_argument(
-        "--min-visit-count",
-        type=int,
-        default=None,
-        help="Contagem minima de visitas. Se omitido, considera todas as visitas.",
-    )
-
-    all_parser = subparsers.add_parser(
-        "all",
-        help="Executa extracao e geracao do cofre.",
-        formatter_class=argparse.RawTextHelpFormatter,
-        epilog=(
-            "Exemplos:\n"
-            "  uv run second-brain all\n"
-            "  uv run second-brain all "
-            '--vault-path "C:\\obsidian\\my_vault\\second_brain"'
-        ),
-    )
-    all_parser.add_argument(
-        "--db-path", type=Path, default=DEFAULT_DB_PATH, help="Caminho do banco DuckDB."
-    )
-    all_parser.add_argument(
-        "--vault-path",
-        type=Path,
-        default=None,
-        metavar="PATH",
-        help=(
-            "Caminho do cofre Obsidian. Use aspas quando houver espacos no caminho. "
-            "Se omitido, usa OBSIDIAN_VAULT_PATH ou o fallback do projeto."
-        ),
-    )
-    all_parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Simula a geracao do cofre sem escrever arquivos.",
-    )
-    all_parser.add_argument(
-        "--limit",
-        type=int,
-        default=None,
-        help="Limita a quantidade de notas de fonte geradas.",
-    )
-    all_parser.add_argument(
-        "--min-visit-count",
-        type=int,
-        default=None,
-        help="Contagem minima de visitas. Se omitido, considera todas as visitas.",
-    )
+    add_vault_arguments(vault_parser)
 
     semantic_parser = subparsers.add_parser(
         "build-semantic",
-        help="Gera agregadores semanticos com embeddings e clusters.",
+        help="Build semantic aggregators with embeddings and clusters.",
         formatter_class=argparse.RawTextHelpFormatter,
         epilog=(
-            "Exemplos:\n"
+            "Examples:\n"
             "  uv run second-brain build-semantic --dry-run\n"
             "  uv run second-brain build-semantic --n-clusters 12 --llm-provider none"
         ),
     )
-    semantic_parser.add_argument(
-        "--db-path", type=Path, default=DEFAULT_DB_PATH, help="Caminho do banco DuckDB."
-    )
-    semantic_parser.add_argument(
-        "--vault-path",
-        type=Path,
-        default=None,
-        metavar="PATH",
-        help=(
-            "Caminho do cofre Obsidian. Se omitido, usa OBSIDIAN_VAULT_PATH "
-            "ou fallback do projeto."
+    add_vault_arguments(semantic_parser)
+    add_semantic_arguments(semantic_parser)
+
+    all_parser = subparsers.add_parser(
+        "all",
+        help="Run extract, vault generation, and semantic clustering.",
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  uv run second-brain all\n"
+            "  uv run second-brain all "
+            '--vault-path "C:\\obsidian\\my_vault\\second_brain"\n'
+            "  uv run second-brain all --dry-run --n-clusters 12"
         ),
     )
-    semantic_parser.add_argument(
-        "--dry-run", action="store_true", help="Simula sem escrever arquivos."
-    )
-    semantic_parser.add_argument(
-        "--limit",
-        type=int,
-        default=None,
-        help="Limita a quantidade de fontes processadas.",
-    )
-    semantic_parser.add_argument(
-        "--min-visit-count",
-        type=int,
-        default=None,
-        help=(
-            "Contagem minima de visitas para entrar na camada semantica. "
-            "Se omitido, considera todas as visitas."
-        ),
-    )
-    semantic_parser.add_argument(
-        "--n-clusters",
-        type=int,
-        default=SEMANTIC_DEFAULT_N_CLUSTERS,
-        help="Quantidade alvo de clusters semanticos.",
-    )
-    semantic_parser.add_argument(
-        "--embedding-model",
-        type=str,
-        default=EMBEDDING_MODEL_NAME,
-        help="Nome do modelo sentence-transformers.",
-    )
-    semantic_parser.add_argument(
-        "--llm-provider",
-        choices=("none", "openai", "anthropic", "gemini"),
-        default="none",
-        help="Provider opcional para rotulo/resumo dos clusters.",
-    )
+    add_vault_arguments(all_parser)
+    add_semantic_arguments(all_parser)
 
     return parser.parse_args()
 
@@ -223,6 +185,16 @@ def main() -> None:
             limit=args.limit,
             min_visit_count=args.min_visit_count,
         )
+        build_semantic(
+            db_path=args.db_path,
+            vault_path=args.vault_path,
+            min_visit_count=args.min_visit_count,
+            n_clusters=args.n_clusters,
+            model_name=args.embedding_model,
+            llm_provider=args.llm_provider,
+            dry_run=args.dry_run,
+            limit=args.limit,
+        )
         return
 
     if args.command == "build-semantic":
@@ -238,7 +210,7 @@ def main() -> None:
         )
         return
 
-    raise SystemExit("Informe um comando: extract, build-vault, build-semantic ou all.")
+    raise SystemExit("Provide a command: extract, build-vault, build-semantic, or all.")
 
 
 if __name__ == "__main__":

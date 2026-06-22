@@ -61,7 +61,7 @@ Você precisa de:
 - Git.
 - Python 3.11 ou mais novo.
 - `uv`, que instala e executa o projeto.
-- Obsidian, se quiser abrir as notas geradas como um cofre.
+- Obsidian, se quiser abrir as notas geradas como um cofre. [Download - Obsidian](https://obsidian.md/download)
 
 Escolha onde você quer guardar o projeto:
 
@@ -145,10 +145,11 @@ uv run second-brain build-vault --vault-path "C:\obsidian\my_vault\second_brain"
 
 ### `all`
 
-Faz duas etapas em sequência:
+Executa o pipeline completo em sequência:
 
 1. Executa `extract`.
 2. Executa `build-vault`.
+3. Executa `build-semantic`.
 
 ```powershell
 uv run second-brain all
@@ -165,6 +166,9 @@ Para simular sem escrever arquivos:
 ```powershell
 uv run second-brain all --dry-run
 ```
+
+Na primeira execução completa, a etapa semântica pode demorar porque pode carregar
+ou baixar modelos de embeddings.
 
 ### `build-semantic --dry-run`
 
@@ -225,6 +229,34 @@ uv run pytest
 | `--n-clusters` | Define quantos grupos semânticos serão criados. |
 | `--embedding-model` | Escolhe o modelo usado para embeddings. |
 | `--llm-provider` | Escolhe um provedor para rótulos/resumos. O padrão é `none`. |
+
+## Opções semânticas: embeddings e provedor LLM
+
+`--embedding-model` controla qual modelo `sentence-transformers` será usado para
+transformar cada fonte em um vetor de embedding. O padrão é
+`sentence-transformers/all-MiniLM-L6-v2`.
+
+Hoje, a entrada semântica é intencionalmente compacta. Cada fonte é representada
+pelo título, domínio e tipo da fonte. Esses embeddings influenciam diretamente
+os clusters semânticos criados por `build-semantic` e `all`.
+
+Se o modelo ou o runtime local de ML não puder ser carregado, o projeto usa um
+fallback local determinístico baseado em hash. Isso mantém o comando utilizável,
+mas a qualidade semântica pode ser menor do que com um modelo real de embeddings.
+
+`--llm-provider` aceita `none`, `openai`, `anthropic` e `gemini`. O padrão é
+`none`. Na versão atual, essa opção não chama APIs externas. Os rótulos dos
+clusters são gerados localmente a partir de termos frequentes.
+
+Se você escolher um provider diferente de `none`, o resumo gerado para o cluster
+apenas informa que a sumarização automática está indisponível para aquele
+provider. A integração real com LLMs está planejada para uma versão futura.
+
+Uso local recomendado:
+
+```powershell
+uv run second-brain build-semantic --embedding-model sentence-transformers/all-MiniLM-L6-v2 --llm-provider none
+```
 
 ## Onde os arquivos ficam
 
